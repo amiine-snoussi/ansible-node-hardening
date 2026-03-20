@@ -1,0 +1,5 @@
+---
+install_docker: true
+docker_users:
+  - deploy
+  - ubuntu

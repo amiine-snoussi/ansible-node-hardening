@@ -1,0 +1,55 @@
+###############################################################################
+# ansible-node-hardening — Ubuntu Server Provisioning & Security Hardening
+# Author: Amine Snoussi
+#
+# Usage:
+#   ansible-playbook -i inventory/hosts.ini site.yml
+#   ansible-playbook -i inventory/hosts.ini site.yml --tags "ssh,firewall"
+#   ansible-playbook -i inventory/hosts.ini site.yml --check  (dry-run)
+###############################################################################
+---
+- name: Provision and harden Ubuntu servers
+  hosts: all
+  become: true
+  gather_facts: true
+
+  pre_tasks:
+    - name: Validate target is Ubuntu
+      ansible.builtin.assert:
+        that:
+          - ansible_distribution == "Ubuntu"
+          - ansible_distribution_major_version | int >= 20
+        fail_msg: "This playbook only supports Ubuntu 20.04+"
+        success_msg: "Target validated — {{ ansible_distribution }} {{ ansible_distribution_version }}"
+
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+
+  roles:
+    - role: common
+      tags: [common, base]
+    - role: ssh-hardening
+      tags: [ssh, security]
+    - role: firewall
+      tags: [firewall, security]
+    - role: docker
+      tags: [docker]
+    - role: monitoring
+      tags: [monitoring]
+
+  post_tasks:
+    - name: Display hardening summary
+      ansible.builtin.debug:
+        msg:
+          - "============================================"
+          - "  NODE HARDENING COMPLETE"
+          - "============================================"
+          - "  Host:       {{ inventory_hostname }}"
+          - "  IP:         {{ ansible_default_ipv4.address }}"
+          - "  OS:         {{ ansible_distribution }} {{ ansible_distribution_version }}"
+          - "  SSH Port:   {{ ssh_port }}"
+          - "  Docker:     {{ 'installed' if install_docker else 'skipped' }}"
+          - "  Monitoring: {{ 'installed' if install_node_exporter else 'skipped' }}"
+          - "============================================"

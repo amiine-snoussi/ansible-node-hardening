@@ -1,0 +1,44 @@
+---
+# =============================================================================
+# firewall — Configure UFW with strict defaults
+# =============================================================================
+
+- name: Install UFW
+  ansible.builtin.apt:
+    name: ufw
+    state: present
+
+- name: Reset UFW to defaults
+  community.general.ufw:
+    state: reset
+
+- name: Set default incoming policy
+  community.general.ufw:
+    direction: incoming
+    default: "{{ ufw_default_incoming }}"
+
+- name: Set default outgoing policy
+  community.general.ufw:
+    direction: outgoing
+    default: "{{ ufw_default_outgoing }}"
+
+- name: Configure firewall rules
+  community.general.ufw:
+    rule: "{{ item.rule }}"
+    port: "{{ item.port | string }}"
+    proto: "{{ item.proto }}"
+    comment: "{{ item.comment | default(omit) }}"
+  loop: "{{ ufw_rules }}"
+
+- name: Allow Node Exporter port if monitoring is enabled
+  community.general.ufw:
+    rule: allow
+    port: "{{ node_exporter_port | default(9100) | string }}"
+    proto: tcp
+    comment: "Prometheus Node Exporter"
+  when: install_node_exporter | default(false)
+
+- name: Enable UFW with logging
+  community.general.ufw:
+    state: enabled
+    logging: "on"

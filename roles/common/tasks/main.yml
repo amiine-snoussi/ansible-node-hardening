@@ -1,0 +1,113 @@
+---
+# =============================================================================
+# common — Base server provisioning and OS hardening
+# =============================================================================
+
+- name: Set timezone
+  community.general.timezone:
+    name: "{{ timezone }}"
+
+- name: Set hostname from inventory
+  ansible.builtin.hostname:
+    name: "{{ inventory_hostname }}"
+
+- name: Install essential packages
+  ansible.builtin.apt:
+    name: "{{ common_packages }}"
+    state: present
+  register: apt_result
+  retries: 3
+  delay: 10
+  until: apt_result is success
+
+- name: Create deploy user
+  ansible.builtin.user:
+    name: "{{ deploy_user }}"
+    shell: "{{ deploy_user_shell }}"
+    groups: sudo
+    append: true
+    create_home: true
+    state: present
+
+- name: Grant deploy user passwordless sudo
+  ansible.builtin.lineinfile:
+    path: /etc/sudoers.d/{{ deploy_user }}
+    line: "{{ deploy_user }} ALL=(ALL) NOPASSWD:ALL"
+    create: true
+    mode: "0440"
+    validate: "visudo -cf %s"
+
+- name: Copy authorized keys to deploy user
+  ansible.posix.authorized_key:
+    user: "{{ deploy_user }}"
+    key: "{{ lookup('file', '~/.ssh/id_rsa.pub', errors='ignore') | default('') }}"
+    state: present
+  when: lookup('file', '~/.ssh/id_rsa.pub', errors='ignore') | default('') | length > 0
+
+# --- Kernel Hardening ---
+
+- name: Apply sysctl hardening parameters
+  ansible.posix.sysctl:
+    name: "{{ item.key }}"
+    value: "{{ item.value }}"
+    sysctl_set: true
+    state: present
+    reload: true
+  loop: "{{ sysctl_hardening | dict2items }}"
+
+# --- fail2ban ---
+
+- name: Enable and start fail2ban
+  ansible.builtin.systemd:
+    name: fail2ban
+    enabled: true
+    state: started
+
+# --- Automatic Security Updates ---
+
+- name: Enable unattended-upgrades for security patches
+  ansible.builtin.copy:
+    dest: /etc/apt/apt.conf.d/20auto-upgrades
+    content: |
+      APT::Periodic::Update-Package-Lists "1";
+      APT::Periodic::Unattended-Upgrade "1";
+      APT::Periodic::AutocleanInterval "7";
+    mode: "0644"
+  notify: restart unattended-upgrades
+
+# --- Shared memory hardening ---
+
+- name: Secure shared memory
+  ansible.posix.mount:
+    path: /run/shm
+    src: tmpfs
+    fstype: tmpfs
+    opts: defaults,noexec,nosuid,nodev
+    state: mounted
+
+# --- Disable unused filesystems ---
+
+- name: Disable unused filesystem modules
+  ansible.builtin.copy:
+    dest: "/etc/modprobe.d/disable-{{ item }}.conf"
+    content: "install {{ item }} /bin/true\n"
+    mode: "0644"
+  loop:
+    - cramfs
+    - freevxfs
+    - hfs
+    - hfsplus
+    - squashfs
+    - udf
+
+- name: Remove world-writable permissions on cron directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    mode: "0700"
+    state: directory
+  loop:
+    - /etc/cron.d
+    - /etc/cron.daily
+    - /etc/cron.hourly
+    - /etc/cron.monthly
+    - /etc/cron.weekly

@@ -1,0 +1,24 @@
+# Ansible
+*.retry
+.cache/
+
+# Secrets — NEVER commit
+*.pem
+*.key
+vault_password
+.vault_pass
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Python
+__pycache__/
+*.pyc
+.venv/

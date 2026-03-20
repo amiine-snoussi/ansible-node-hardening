@@ -1,0 +1,58 @@
+---
+# =============================================================================
+# ssh-hardening — Lock down SSH access
+# =============================================================================
+
+- name: Backup original sshd_config
+  ansible.builtin.copy:
+    src: /etc/ssh/sshd_config
+    dest: /etc/ssh/sshd_config.bak
+    remote_src: true
+    mode: "0600"
+    force: false
+
+- name: Deploy hardened sshd_config
+  ansible.builtin.template:
+    src: sshd_config.j2
+    dest: /etc/ssh/sshd_config
+    mode: "0600"
+    owner: root
+    group: root
+    validate: "sshd -t -f %s"
+  notify: restart sshd
+
+- name: Set SSH login banner
+  ansible.builtin.copy:
+    dest: /etc/issue.net
+    content: |
+      ============================================================
+        AUTHORIZED ACCESS ONLY
+        This system is monitored. Unauthorized access is prohibited.
+      ============================================================
+    mode: "0644"
+
+- name: Remove SSH host keys smaller than 4096 bits (RSA)
+  ansible.builtin.shell: |
+    for key in /etc/ssh/ssh_host_*_key; do
+      bits=$(ssh-keygen -l -f "$key" 2>/dev/null | awk '{print $1}')
+      type=$(ssh-keygen -l -f "$key" 2>/dev/null | awk '{print $NF}' | tr -d '()')
+      if [ "$type" = "RSA" ] && [ "$bits" -lt 4096 ]; then
+        rm -f "$key" "${key}.pub"
+      fi
+    done
+  args:
+    executable: /bin/bash
+  changed_when: false
+
+- name: Regenerate strong RSA host key if missing
+  ansible.builtin.command: ssh-keygen -t rsa -b 4096 -f /etc/ssh/ssh_host_rsa_key -N ""
+  args:
+    creates: /etc/ssh/ssh_host_rsa_key
+  notify: restart sshd
+
+- name: Set strict permissions on SSH directory
+  ansible.builtin.file:
+    path: /etc/ssh
+    mode: "0755"
+    owner: root
+    group: root
