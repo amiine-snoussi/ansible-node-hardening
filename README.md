@@ -143,7 +143,7 @@ Suggested commands for live proof:
 
 ```bash
 # SSH settings
-sudo sshd -T | egrep "permitrootlogin|passwordauthentication|maxauthtries"
+sudo sshd -T | grep -E "permitrootlogin|passwordauthentication|maxauthtries"
 
 # Firewall status
 sudo ufw status verbose
