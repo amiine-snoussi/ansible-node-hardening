@@ -11,7 +11,7 @@ One command takes a fresh Ubuntu 22.04 server from zero to production-ready:
                       │  Fresh Ubuntu 22.04    │
                       └───────────┬────────────┘
                                   │
-                      ansible-playbook site.yml
+              ansible-playbook site.yml
                                   │
          ┌────────────────────────┼────────────────────────┐
          ▼                        ▼                        ▼

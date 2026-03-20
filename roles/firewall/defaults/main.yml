@@ -1,7 +1,7 @@
 ---
-ufw_default_incoming: deny
-ufw_default_outgoing: allow
-ufw_rules:
+firewall_default_incoming: deny
+firewall_default_outgoing: allow
+firewall_rules:
   - { rule: allow, port: 22, proto: tcp, comment: "SSH" }
   - { rule: allow, port: 80, proto: tcp, comment: "HTTP" }
   - { rule: allow, port: 443, proto: tcp, comment: "HTTPS" }

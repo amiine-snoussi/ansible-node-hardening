@@ -50,6 +50,6 @@
           - "  IP:         {{ ansible_default_ipv4.address }}"
           - "  OS:         {{ ansible_distribution }} {{ ansible_distribution_version }}"
           - "  SSH Port:   {{ ssh_port }}"
-          - "  Docker:     {{ 'installed' if install_docker else 'skipped' }}"
-          - "  Monitoring: {{ 'installed' if install_node_exporter else 'skipped' }}"
+          - "  Docker:     {{ 'installed' if docker_install else 'skipped' }}"
+          - "  Monitoring: {{ 'installed' if monitoring_install_node_exporter else 'skipped' }}"
           - "============================================"

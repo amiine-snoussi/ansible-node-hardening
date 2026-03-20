@@ -7,10 +7,10 @@ After=network-online.target
 
 [Service]
 Type=simple
-User={{ node_exporter_user }}
-Group={{ node_exporter_user }}
+User={{ monitoring_node_exporter_user }}
+Group={{ monitoring_node_exporter_user }}
 ExecStart=/usr/local/bin/node_exporter \
-    --web.listen-address=:{{ node_exporter_port }} \
+    --web.listen-address=:{{ monitoring_node_exporter_port }} \
     --collector.systemd \
     --collector.processes
 Restart=on-failure

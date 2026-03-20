@@ -5,7 +5,7 @@
 
 - name: Skip Docker installation if not requested
   ansible.builtin.meta: end_role
-  when: not install_docker
+  when: not docker_install
 
 - name: Install Docker prerequisites
   ansible.builtin.apt:
@@ -47,7 +47,7 @@
       - docker-compose-plugin
     state: present
     update_cache: true
-  notify: restart docker
+  notify: Restart docker
 
 - name: Add users to docker group
   ansible.builtin.user:
@@ -78,4 +78,4 @@
         ]
       }
     mode: "0644"
-  notify: restart docker
+  notify: Restart docker

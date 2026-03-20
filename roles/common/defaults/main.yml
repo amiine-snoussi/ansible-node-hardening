@@ -1,7 +1,7 @@
 ---
-timezone: America/Montreal
-deploy_user: deploy
-deploy_user_shell: /bin/bash
+common_timezone: America/Montreal
+common_deploy_user: deploy
+common_deploy_user_shell: /bin/bash
 
 common_packages:
   - curl
@@ -20,7 +20,7 @@ common_packages:
   - unattended-upgrades
   - logrotate
 
-sysctl_hardening:
+common_sysctl_hardening:
   net.ipv4.ip_forward: 0
   net.ipv4.conf.all.send_redirects: 0
   net.ipv4.conf.default.send_redirects: 0

@@ -5,9 +5,9 @@
 ---
 
 # --- General ---
-timezone: America/Montreal
-deploy_user: deploy
-deploy_user_shell: /bin/bash
+common_timezone: America/Montreal
+common_deploy_user: deploy
+common_deploy_user_shell: /bin/bash
 
 # --- SSH Hardening ---
 ssh_port: 22
@@ -17,24 +17,24 @@ ssh_max_auth_tries: 3
 ssh_client_alive_interval: 300
 ssh_client_alive_count_max: 2
 ssh_allowed_users:
-  - "{{ deploy_user }}"
+  - "{{ common_deploy_user }}"
   - ubuntu
 
 # --- Firewall (UFW) ---
-ufw_default_incoming: deny
-ufw_default_outgoing: allow
-ufw_rules:
+firewall_default_incoming: deny
+firewall_default_outgoing: allow
+firewall_rules:
   - { rule: allow, port: "{{ ssh_port }}", proto: tcp, comment: "SSH" }
   - { rule: allow, port: 80, proto: tcp, comment: "HTTP" }
   - { rule: allow, port: 443, proto: tcp, comment: "HTTPS" }
 
 # --- Docker ---
-install_docker: true
+docker_install: true
 docker_users:
-  - "{{ deploy_user }}"
+  - "{{ common_deploy_user }}"
   - ubuntu
 
 # --- Monitoring ---
-install_node_exporter: true
-node_exporter_version: "1.7.0"
-node_exporter_port: 9100
+monitoring_install_node_exporter: true
+monitoring_node_exporter_version: "1.7.0"
+monitoring_node_exporter_port: 9100

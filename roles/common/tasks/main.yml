@@ -5,7 +5,7 @@
 
 - name: Set timezone
   community.general.timezone:
-    name: "{{ timezone }}"
+    name: "{{ common_timezone }}"
 
 - name: Set hostname from inventory
   ansible.builtin.hostname:
@@ -15,15 +15,15 @@
   ansible.builtin.apt:
     name: "{{ common_packages }}"
     state: present
-  register: apt_result
+  register: common_apt_result
   retries: 3
   delay: 10
-  until: apt_result is success
+  until: common_apt_result is success
 
 - name: Create deploy user
   ansible.builtin.user:
-    name: "{{ deploy_user }}"
-    shell: "{{ deploy_user_shell }}"
+    name: "{{ common_deploy_user }}"
+    shell: "{{ common_deploy_user_shell }}"
     groups: sudo
     append: true
     create_home: true
@@ -31,15 +31,15 @@
 
 - name: Grant deploy user passwordless sudo
   ansible.builtin.lineinfile:
-    path: /etc/sudoers.d/{{ deploy_user }}
-    line: "{{ deploy_user }} ALL=(ALL) NOPASSWD:ALL"
+    path: /etc/sudoers.d/{{ common_deploy_user }}
+    line: "{{ common_deploy_user }} ALL=(ALL) NOPASSWD:ALL"
     create: true
     mode: "0440"
     validate: "visudo -cf %s"
 
 - name: Copy authorized keys to deploy user
   ansible.posix.authorized_key:
-    user: "{{ deploy_user }}"
+    user: "{{ common_deploy_user }}"
     key: "{{ lookup('file', '~/.ssh/id_rsa.pub', errors='ignore') | default('') }}"
     state: present
   when: lookup('file', '~/.ssh/id_rsa.pub', errors='ignore') | default('') | length > 0
@@ -53,7 +53,7 @@
     sysctl_set: true
     state: present
     reload: true
-  loop: "{{ sysctl_hardening | dict2items }}"
+  loop: "{{ common_sysctl_hardening | dict2items }}"
 
 # --- fail2ban ---
 
@@ -73,7 +73,7 @@
       APT::Periodic::Unattended-Upgrade "1";
       APT::Periodic::AutocleanInterval "7";
     mode: "0644"
-  notify: restart unattended-upgrades
+  notify: Restart unattended-upgrades
 
 # --- Shared memory hardening ---
 

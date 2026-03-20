@@ -19,7 +19,7 @@
     owner: root
     group: root
     validate: "sshd -t -f %s"
-  notify: restart sshd
+  notify: Restart sshd
 
 - name: Set SSH login banner
   ansible.builtin.copy:
@@ -32,15 +32,16 @@
     mode: "0644"
 
 - name: Remove SSH host keys smaller than 4096 bits (RSA)
-  ansible.builtin.shell: |
-    for key in /etc/ssh/ssh_host_*_key; do
-      bits=$(ssh-keygen -l -f "$key" 2>/dev/null | awk '{print $1}')
-      type=$(ssh-keygen -l -f "$key" 2>/dev/null | awk '{print $NF}' | tr -d '()')
-      if [ "$type" = "RSA" ] && [ "$bits" -lt 4096 ]; then
-        rm -f "$key" "${key}.pub"
-      fi
-    done
-  args:
+  ansible.builtin.shell:
+    cmd: |
+      set -o pipefail
+      for key in /etc/ssh/ssh_host_*_key; do
+        bits=$(ssh-keygen -l -f "$key" 2>/dev/null | awk '{print $1}')
+        type=$(ssh-keygen -l -f "$key" 2>/dev/null | awk '{print $NF}' | tr -d '()')
+        if [ "$type" = "RSA" ] && [ "$bits" -lt 4096 ]; then
+          rm -f "$key" "${key}.pub"
+        fi
+      done
     executable: /bin/bash
   changed_when: false
 
@@ -48,7 +49,7 @@
   ansible.builtin.command: ssh-keygen -t rsa -b 4096 -f /etc/ssh/ssh_host_rsa_key -N ""
   args:
     creates: /etc/ssh/ssh_host_rsa_key
-  notify: restart sshd
+  notify: Restart sshd
 
 - name: Set strict permissions on SSH directory
   ansible.builtin.file:
