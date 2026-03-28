@@ -102,6 +102,82 @@ ansible-playbook site.yml --tags "ssh,firewall"
 ansible-playbook site.yml --tags "docker"
 ```
 
+## Portfolio Review (Interview Lens)
+
+### 1) Role structure and Ansible best practices
+
+**Current state:** Good overall structure for a demo role-based project:
+- Roles are separated by concern (`common`, `ssh-hardening`, `firewall`, `docker`, `monitoring`)
+- Variables are centralized (`group_vars/all.yml`) with role defaults in each role
+- Handlers/templates are used where expected
+- Tags are defined at role level for selective runs
+
+**Improvement:** add role metadata and role-level docs (`meta/main.yml`, short role README) so interviewers can quickly see supported platforms, dependencies, and role inputs/outputs.
+
+### 2) Example inventories someone can test with
+
+Yes. In addition to `inventory/hosts.ini`, this repo now includes ready-to-copy examples:
+- `inventory/examples/vagrant.ini`
+- `inventory/examples/docker-local.ini`
+- `inventory/examples/aws.ini`
+
+Use one of them as a starting point:
+
+```bash
+cp inventory/examples/vagrant.ini inventory/hosts.ini
+```
+
+### 3) README before/after results
+
+Use this quick verification table in demos:
+
+| Check | Before hardening | After hardening |
+|------|-------------------|-----------------|
+| SSH root login | Typically allowed/default distro config | `PermitRootLogin no` |
+| SSH password auth | Often enabled on fresh images | `PasswordAuthentication no` |
+| UFW policy | Inactive / permissive | Enabled, deny incoming by default |
+| fail2ban | Not installed | Installed and active |
+| unattended-upgrades | Not always enabled | Enabled for security updates |
+
+Suggested commands for live proof:
+
+```bash
+# SSH settings
+sudo sshd -T | grep -E "permitrootlogin|passwordauthentication|maxauthtries"
+
+# Firewall status
+sudo ufw status verbose
+
+# Services
+systemctl is-active fail2ban
+systemctl is-enabled unattended-upgrades
+```
+
+### 4) Safe testing workflow (dry-run + local target)
+
+This playbook supports safe dry-run and syntax validation out of the box:
+
+```bash
+ansible-playbook -i inventory/hosts.ini site.yml --syntax-check
+ansible-playbook -i inventory/hosts.ini site.yml --check --diff
+```
+
+For local demo without touching a real server:
+
+```bash
+cp inventory/examples/docker-local.ini inventory/hosts.ini
+ansible-playbook -i inventory/hosts.ini site.yml --check --diff
+```
+
+## 3 High-Impact Improvements to Make This More Demo-able
+
+1. **Add role metadata + per-role mini READMEs**  
+   Makes each role independently presentable and easier to discuss in interviews.
+2. **Add a reproducible local lab path (Vagrantfile or Molecule scenario)**  
+   Lets interviewers run the same environment quickly and safely.
+3. **Add an “evidence” section with captured command outputs**  
+   Include concise, real command output snippets before/after for SSH, UFW, and services.
+
 ## Integration with Other Projects
 
 This repo is designed as part of a complete DevOps pipeline:
@@ -121,7 +197,11 @@ Provision EC2 instance       Harden & configure server       Deploy application
 ├── ansible.cfg                       # Ansible configuration
 ├── requirements.yml                  # Galaxy dependencies
 ├── inventory/
-│   └── hosts.ini                     # Target host inventory
+│   ├── hosts.ini                     # Target host inventory
+│   └── examples/
+│       ├── aws.ini                   # AWS example inventory
+│       ├── docker-local.ini          # Local safe test inventory
+│       └── vagrant.ini               # Vagrant example inventory
 ├── group_vars/
 │   └── all.yml                       # Global variables
 ├── roles/
